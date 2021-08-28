@@ -40,5 +40,7 @@ sim_ve_imperfect_tests <- function(n = 1000,
   return(d)
   
 }
+
 # test
 gen(covariates = F)
+gen(covariates = T)
