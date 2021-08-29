@@ -25,6 +25,7 @@ estimated_OR <- (t2[1] * t2[4]) / (t2[2] * t2[3])
 estimated_OR # check
 
 # BLCM - 2 tests Non differential classification
+# data preparation
 a <- as.numeric(table(df[df$vax==0,]$dis1, df[df$vax==0,]$dis2))
 b <- as.numeric(table(df[df$vax==1,]$dis1, df[df$vax==1,]$dis2))
 c <- table(df$dis1, df$dis2, df$vax);c
