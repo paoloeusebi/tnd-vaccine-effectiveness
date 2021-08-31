@@ -9,9 +9,10 @@ library(rjags)
 # Generate data
 d <- sim_ve_imperfect_tests(covariates = F,
                             n = 100000,
+                            base_dis_prev = 0.1,
                             Se1 = 0.95,
                             Sp1 = 0.9,
-                            true_OR = 0.75)
+                            true_OR = 0.2)
 
 df <- d$data
 d$`estimated OR T1`
@@ -49,8 +50,8 @@ inits3 = list(".RNG.name" ="base::Mersenne-Twister", ".RNG.seed" = 500022)
 results <- run.jags(blcm_2test_nondif, 
                     n.chains = 3,
                     inits=list(inits1, inits2, inits3),
-                    burnin = 10000,
-                    sample = 100000)
+                    burnin = 1000,
+                    sample = 10000)
 print(results)
 # 
 # plot(results,

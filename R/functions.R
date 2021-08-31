@@ -1,10 +1,11 @@
 sim_ve_imperfect_tests <- function(n = 1000,
-                                  true_OR = 0.1,
-                                  covariates = F,
-                                  Se1 = 1,
-                                  Sp1 = 1,
-                                  Se2 = 1,
-                                  Sp2 = 1) {
+                                   base_dis_prev = 0.05,
+                                   true_OR = 0.1,
+                                   covariates = F,
+                                   Se1 = 1,
+                                   Sp1 = 1,
+                                   Se2 = 1,
+                                   Sp2 = 1) {
   # generate 2 covariates
   x_cont <- rnorm(n, mean = 0, sd = 1)
   x_bin <- rbinom(n, size = 1, prob = 0.2)
@@ -12,19 +13,17 @@ sim_ve_imperfect_tests <- function(n = 1000,
   x
   
   # Simulate propensity to be vaccinated
-  if (covariates == T)
-    vax.beta <- 0.5 + 0.25 * x_cont  - 0.25 * x_bin
-  else if (covariates == F)
-    vax.beta <- 0.5
+  if (covariates == T) {vax.beta <- 0.5 + 0.25 * x_cont  - 0.25 * x_bin}
+  else if (covariates == F){vax.beta <- 0.5} 
+  
   vax.prob <- exp(vax.beta) / (1 + exp(vax.beta))
   vax      <- rbinom(n, 1, prob = vax.prob)
   
   # Simulate propensity to infections (vax + covariates related to no protection)
-  if (covariates == T)
-    dis.beta <-
-    -2 + log(true_OR) * vax + 0.25 * x_cont  - 0.25 * x_bin
-  else if (covariates == F)
-    dis.beta <- -2 + log(true_OR) * vax
+  b0 = log(base_dis_prev/(1-base_dis_prev ))
+  if (covariates == T){dis.beta <- b0 + log(true_OR) * vax + 0.25 * x_cont  - 0.25 * x_bin}
+  else if (covariates == F) {dis.beta <- b0 + log(true_OR) * vax}
+  
   dis.prob <- exp(dis.beta) / (1 + exp(dis.beta))
   truestatus <- rbinom(n, 1, dis.prob)
   # Disease diagnosed with imperfect tests
@@ -51,7 +50,10 @@ sim_ve_imperfect_tests <- function(n = 1000,
 }
 
 # tests
-sim_ve_imperfect_tests(covariates = F, Sp2 = 0.95)
+sim <- sim_ve_imperfect_tests(covariates = F, Sp2=0.75, n=10000, true_OR = 0.1)
+sim$`estimated OR T1`
+sim$`estimated OR T2`
+sim$`true OR`
 # sim_ve_imperfect_tests(covariates = T)
 # sim_ve_imperfect_tests(covariates = F, n=10000000)
 # sim_ve_imperfect_tests(covariates = F, Sp2=0.75, n=10000000)
