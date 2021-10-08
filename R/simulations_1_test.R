@@ -1,11 +1,9 @@
-library(rootSolve)
-
 ## initial values
 inits1 = list(".RNG.name" ="base::Mersenne-Twister", ".RNG.seed" = 100022)
 inits2 = list(".RNG.name" ="base::Mersenne-Twister", ".RNG.seed" = 300022)
 inits3 = list(".RNG.name" ="base::Mersenne-Twister", ".RNG.seed" = 500022)
 
-# sample_size=1000; p1=0.01; Se=0.75; Sp = 0.75; true_OR=0.25
+# n=10000; p1=0.01; Se=0.75; Sp = 0.75; true_OR=0.25
 n_sim <- 1000 # number of simulations
 
 
@@ -37,21 +35,20 @@ for (n in c(1000, 10000)){
         ## run
         results <- run.jags(
           bm_1test_nondif,
-          n.chains = 3,
           inits = list(inits1, inits2, inits3),
-          burnin = 1000,
-          sample = 5000,
-          
+          progress.bar='none'
         )
         
         res_i <- round(results$summaries, 3) %>% 
           as.data.frame() %>%
           rownames_to_column() %>%
-          cbind(sample_size, p1, Se, Sp, true_OR, raw_OR=d$`estimated OR`, n_scenario=j, n_simulation=i) %>%
+          cbind(n, p1, Se, Sp, true_OR, raw_OR=d$`estimated OR`, n_scenario=j, n_simulation=i) %>%
           rename(parameter=rowname)
         
           
         res <- rbind(res, res_i)
+        
+        print(paste("Simulation",i,"- Scenario", j))
           }
         }
       }
@@ -59,4 +56,4 @@ for (n in c(1000, 10000)){
   }
 }
 
-res
+write.csv(res, "tfls/simulations_1_test.csv", row.names = FALSE)

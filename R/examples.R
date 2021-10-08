@@ -5,19 +5,13 @@ library(rjags)
 library(rootSolve)
 testjags()
 
-
-# run scripts -------------------------------------------------------------
-source("R/functions.R") # functions for data simulations
-source("R/models.R")    # Bayesian models
-source("R/simulations_1_test.R")    # simulations
-
 # BM - 1 test non-differential classification -----------------------------
 d <- sim_ve_1_imperfect_test(covariates = F,
-                            n = 1000,
-                            base_dis_prev = 0.1,
-                            Se = 0.75,
-                            Sp = 0.90,
-                            true_OR = 0.2)
+                             n = 1000,
+                             base_dis_prev = 0.1,
+                             Se = 0.75,
+                             Sp = 0.90,
+                             true_OR = 0.2)
 
 d$`estimated OR`
 
@@ -48,11 +42,11 @@ print(results)
 # BLCM - 2 tests non-differential miss-classification ---------------------
 
 d <- sim_ve_2_imperfect_tests(covariates = F,
-                            n = 1000,
-                            base_dis_prev = 0.1,
-                            Se1 = 0.95,
-                            Sp1 = 0.9,
-                            true_OR = 0.2)
+                              n = 1000,
+                              base_dis_prev = 0.1,
+                              Se1 = 0.95,
+                              Sp1 = 0.9,
+                              true_OR = 0.2)
 # data
 y <- d$data
 m = 2
