@@ -3,7 +3,7 @@ bm_1test_nondif <- " model {
 for (i in 1:m) {
 
                 # likelihood
-                y[i,1:2] ~ dmulti(prob[i,1:2],n[i])
+                y[i,1:2] ~ dmulti(prob[i,1:2], N[i])
                 prob[i,1] <- pi[i]*Se + (1-pi[i])*(1-Sp)
                 prob[i,2] <- pi[i]*(1-Se) + (1-pi[i])*Sp
                 # priors for prevalence parameters
@@ -15,7 +15,7 @@ Sp~dbeta(HPSp[1], HPSp[2])
 
 OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
 
-#data# m, n, y, HPSe, HPSp
+#data# m, N, y, HPSe, HPSp
 #inits#
 #monitor# Se, Sp, pi, OR
 }

@@ -1,3 +1,23 @@
+# A modified version of findbetaqaq
+findbetaqq2 <- function (percentile.value1, percentile1, percentile.value2, percentile2) 
+{
+  findcentiles <- function(x) {
+    c(F1 = qbeta(percentile1, x[1], x[2]) - percentile.value1, 
+      F2 = qbeta(percentile2, x[1], x[2]) - percentile.value2)
+  }
+  ss <- multiroot(f = findcentiles, start = c(1, 1))
+  finalshape1 = ss$root[1]
+  finalshape2 = ss$root[2]
+  sample_beta = rbeta(10000, finalshape1, finalshape2)
+  shapes <- c(round(finalshape1, 2), round(finalshape2, 2))
+  
+  return(shapes)
+}
+
+# Test
+findbetaqq2(percentile.value1=0.30,percentile1=0.20,percentile.value2=0.60,percentile2=0.90)
+
+
 # Simulating 1 imperfect test with non-differential miss-classification ---
 sim_ve_1_imperfect_test <- function(n = 1000,
                                     base_dis_prev = 0.05,
