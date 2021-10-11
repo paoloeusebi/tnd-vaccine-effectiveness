@@ -1,10 +1,12 @@
-# A modified version of findbetaqaq
+# A modified version of findbetaqaq -------------------------------------------
+
 findbetaqq2 <- function (percentile.value1, percentile1, percentile.value2, percentile2) 
 {
   findcentiles <- function(x) {
     c(F1 = qbeta(percentile1, x[1], x[2]) - percentile.value1, 
       F2 = qbeta(percentile2, x[1], x[2]) - percentile.value2)
   }
+  
   ss <- multiroot(f = findcentiles, start = c(1, 1))
   finalshape1 = ss$root[1]
   finalshape2 = ss$root[2]
@@ -15,16 +17,19 @@ findbetaqq2 <- function (percentile.value1, percentile1, percentile.value2, perc
 }
 
 # Test
-findbetaqq2(percentile.value1=0.30,percentile1=0.20,percentile.value2=0.60,percentile2=0.90)
+findbetaqq2(percentile.value1=0.30, percentile1=0.20, percentile.value2=0.60, percentile2=0.90)
 
 
-# Simulating 1 imperfect test with non-differential miss-classification ---
+# Simulating 1 imperfect test with non-differential miss-classification -------
+
 sim_ve_1_imperfect_test <- function(n = 1000,
-                                    base_dis_prev = 0.05,
+                                    base_dis_prev = 0.1,
                                     true_OR = 0.1,
                                     covariates = F,
+                                    vax_prob = 0.75,
                                     Se = 1,
                                     Sp = 1) {
+  
   # generate 2 covariates
   x_cont <- rnorm(n, mean = 0, sd = 1)
   x_bin <- rbinom(n, size = 1, prob = 0.2)
@@ -32,22 +37,22 @@ sim_ve_1_imperfect_test <- function(n = 1000,
   x
   
   # Simulate propensity to be vaccinated
-  if (covariates == T) {vax.beta <- 0.5 + 0.25 * x_cont  - 0.25 * x_bin}
-  else if (covariates == F){vax.beta <- 0.5} 
+  a0 = log(vax_prob/(1-vax_prob))
+  if (covariates == T) {vax.beta <- a0 + 0.25 * x_cont  - 0.25 * x_bin}
+  else if (covariates == F) {vax.beta <- a0} 
   
   vax.prob <- exp(vax.beta) / (1 + exp(vax.beta))
-  vax      <- rbinom(n, 1, prob = vax.prob)
+  vax <- rbinom(n, 1, prob = vax.prob)
   
   # Simulate propensity to infections (vax + covariates related to no protection)
-  b0 = log(base_dis_prev/(1-base_dis_prev ))
+  b0 <- log(base_dis_prev/(1-base_dis_prev ))
   if (covariates == T){dis.beta <- b0 + log(true_OR) * vax + 0.25 * x_cont  - 0.25 * x_bin}
   else if (covariates == F) {dis.beta <- b0 + log(true_OR) * vax}
   
   dis.prob <- exp(dis.beta) / (1 + exp(dis.beta))
   truestatus <- rbinom(n, 1, dis.prob)
   # Disease diagnosed with imperfect test
-  dis <-
-    rbinom(n, 1, prob = truestatus * Se + (1 - truestatus) * (1 - Sp))
+  dis <- rbinom(n, 1, prob = truestatus * Se + (1 - truestatus) * (1 - Sp))
   
   df <- data.frame(truestatus, dis, vax, x)
   
@@ -65,25 +70,26 @@ sim_ve_1_imperfect_test <- function(n = 1000,
   
   d <- list("estimated OR" = estimated_OR,
             "true OR" = true_OR,
+            "ipd_data" = df,
             "data" = y)
-  
   return(d)
-  
 }
 
 # tests
-sim <- sim_ve_1_imperfect_test(covariates = F, Sp=0.75, n=10000, true_OR = 0.1)
-sim$`estimated OR`
+sim <- sim_ve_1_imperfect_test(covariates = F, n=1000, true_OR = 0.1)
+round(sim$`estimated OR`, 3)
 sim$`true OR`
-sim$data
+t <- table(sim$ipd_data$vax, sim$ipd_data$truestatus)
+t; prop.table(t, 1); prop.table(t, 2)
 
 
-# Simulating 2 imperfect tests with non-differential miss-classification --
+# Simulating 2 imperfect tests with non-differential miss-classification ------
 
 sim_ve_2_imperfect_tests <- function(n = 1000,
                                      base_dis_prev = 0.05,
                                      true_OR = 0.1,
                                      covariates = F,
+                                     vax_prob = 0.75,
                                      Se1 = 1,
                                      Sp1 = 1,
                                      Se2 = 1,
@@ -96,8 +102,9 @@ sim_ve_2_imperfect_tests <- function(n = 1000,
   x
   
   # Simulate propensity to be vaccinated
-  if (covariates == T) {vax.beta <- 0.5 + 0.25 * x_cont  - 0.25 * x_bin}
-  else if (covariates == F){vax.beta <- 0.5} 
+  a0 = log(vax_prob/(1-vax_prob))
+  if (covariates == T) {vax.beta <- a0 + 0.25 * x_cont  - 0.25 * x_bin}
+  else if (covariates == F){vax.beta <- a0} 
   
   vax.prob <- exp(vax.beta) / (1 + exp(vax.beta))
   vax      <- rbinom(n, 1, prob = vax.prob)
@@ -110,10 +117,8 @@ sim_ve_2_imperfect_tests <- function(n = 1000,
   dis.prob <- exp(dis.beta) / (1 + exp(dis.beta))
   truestatus <- rbinom(n, 1, dis.prob)
   # Disease diagnosed with imperfect tests
-  dis1 <-
-    rbinom(n, 1, prob = truestatus * Se1 + (1 - truestatus) * (1 - Sp1))
-  dis2 <-
-    rbinom(n, 1, prob = truestatus * Se2 + (1 - truestatus) * (1 - Sp2))
+  dis1 <- rbinom(n, 1, prob = truestatus * Se1 + (1 - truestatus) * (1 - Sp1))
+  dis2 <- rbinom(n, 1, prob = truestatus * Se2 + (1 - truestatus) * (1 - Sp2))
   
   df <- data.frame(truestatus, dis1 , dis2, vax, x)
   
@@ -134,6 +139,7 @@ sim_ve_2_imperfect_tests <- function(n = 1000,
   d <- list("estimated OR T1" = estimated_OR1,
             "estimated OR T2" = estimated_OR2,
             "true OR" = true_OR,
+            "ipd_data" = df,
             "data" = y)
   
   return(d)
@@ -141,9 +147,10 @@ sim_ve_2_imperfect_tests <- function(n = 1000,
 }
 
 # tests
-sim <- sim_ve_2_imperfect_tests(covariates = F, Se1=0.8, Sp1=0.95, Sp2=0.9, n=10000, true_OR = 0.2)
-sim$`estimated OR T1`
-sim$`estimated OR T2`
+sim <- sim_ve_2_imperfect_tests(covariates = F, Se1=0.8, Sp1=0.95, Sp2=0.9, n=100000, true_OR = 0.2)
+sim <- sim_ve_2_imperfect_tests(covariates = F, n=100000, true_OR = 0.2)
+round(sim$`estimated OR T1`,3)
+round(sim$`estimated OR T2`,3)
 sim$`true OR`
 sim$data
 
@@ -154,6 +161,7 @@ sim_ve_imperfect_tests_diff <- function(n = 1000,
                                    base_dis_prev = 0.05,
                                    true_OR = 0.1,
                                    covariates = F,
+                                   vax_prob = 0.75,
                                    Se1_V = 1,
                                    Sp1_V = 1,
                                    Se2_V = 1,
@@ -169,8 +177,9 @@ sim_ve_imperfect_tests_diff <- function(n = 1000,
   x
   
   # Simulate propensity to be vaccinated
-  if (covariates == T) {vax.beta <- 0.5 + 0.25 * x_cont  - 0.25 * x_bin}
-  else if (covariates == F){vax.beta <- 0.5} 
+  a0 = log(vax_prob/(1-vax_prob))
+  if (covariates == T) {vax.beta <- a0 + 0.25 * x_cont  - 0.25 * x_bin}
+  else if (covariates == F){vax.beta <- a0} 
   
   vax.prob <- exp(vax.beta) / (1 + exp(vax.beta))
   vax      <- rbinom(n, 1, prob = vax.prob)
@@ -182,6 +191,7 @@ sim_ve_imperfect_tests_diff <- function(n = 1000,
   
   dis.prob <- exp(dis.beta) / (1 + exp(dis.beta))
   truestatus <- rbinom(n, 1, dis.prob)
+  
   # Disease diagnosed with imperfect tests
   dis1 <-
     rbinom(n, 1, prob = truestatus * vax * Se1_V + (1 - truestatus) * vax * (1 - Sp1_V) + 
@@ -209,6 +219,7 @@ sim_ve_imperfect_tests_diff <- function(n = 1000,
   d <- list("estimated OR T1" = estimated_OR1,
             "estimated OR T2" = estimated_OR2,
             "true OR" = true_OR,
+            "ipd_data" = df,
             "data" = y)
   
   return(d)
