@@ -14,4 +14,5 @@ testjags()
 source("R/functions.R") # functions for data simulations
 source("R/models.R")    # Bayesian models
 source("R/simulations_1_test.R")    # simulations
-
+source("R/simulations_2_tests.R")  
+source("R/simulations_summaries_plots.R")  # save simulations summaries and plots
