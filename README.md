@@ -10,7 +10,7 @@ In the [R](R) folder there are the following scripts (tasks):
 - [simulations_1_test.R](R/simulations_1_test.R) (for running simulations with 1 imperfect test)
 - [simulations_2_tests.R](R/simulations_2_tests.R) (for running simulations with 2 imperfect tests)
 - [simulations_summaries_plots.R](R/simulations_summaries_plots.R) (for reading simulations results / create summaries and plots)
-- [examples.R](R/examples.R) (using functions.R and models.R for running interactive sessions with example datasets)
+- [examples.Rmd](R/examples.Rmd) (using functions.R and models.R for testing the approach with interactive examples)
 
 In the [tfls](tfls) folder users can find summaries/plots of simulations
 
