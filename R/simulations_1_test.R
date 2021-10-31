@@ -11,6 +11,8 @@ n_sim <- 100 # number of simulations
 res <- NULL # initialization 
 j <- 0
 
+set.seed(1234)
+
 for (n in c(10000, 100000)){
   for (p1 in c(0.1, 0.2)){
     for (Se in c(0.90, 0.95)){
@@ -29,19 +31,19 @@ for (n in c(10000, 100000)){
         m = 2
         N = apply(y, 1, sum)
         
-        HPSe_0 <- findbetaqq2(percentile.value1 = (Se-0.025), percentile1 =0.025,
-                           percentile.value2 = (Se+0.025), percentile2 = 0.975)
-        HPSp_0 <- findbetaqq2(percentile.value1 = (Sp-0.025), percentile1 = 0.025, 
-                           percentile.value2 = (Sp+0.025), percentile2 = 0.975)
-        
-        HPSe <- HPSe_0*(n/10000)
-        HPSp <- HPSp_0*(n/10000)
+        HPSe <- findbetaqq2(percentile.value1 = (Se-0.025), percentile1 =0.025,
+                            percentile.value2 = (Se+0.025), percentile2 = 0.975)
+        HPSp <- findbetaqq2(percentile.value1 = (Sp-0.025), percentile1 = 0.025,
+                            percentile.value2 = (Sp+0.025), percentile2 = 0.975)
         
         ## run
         results <- run.jags(
           bm_1test_nondif,
           inits = list(inits1, inits2, inits3),
-          progress.bar='none', silent.jags = T
+          progress.bar='none', silent.jags = T,
+          burnin = 10000,
+          thin = 10,
+          sample = 10000
         )
 
         res_i <- round(results$summaries, 3) %>% 
