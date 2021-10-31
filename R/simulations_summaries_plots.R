@@ -29,7 +29,7 @@ p <- ggplot(data = res2[res2$p1==0.1 & res2$OR<1,],
   theme_bw() +
   scale_y_continuous(breaks=c(0.25, 0.5, 0.75))
 png("tfls/simulations_1_test_boxplot_p1_10pct.png", 
-    width = 480, height = 720)
+    width = 480, height = 480*2)
 print(p)
 dev.off()
 
@@ -41,7 +41,7 @@ p <- ggplot(data = res2[res2$p1==0.2 & res2$OR<1,],
   theme_bw() +
   scale_y_continuous(breaks=c(0.25, 0.5, 0.75))
 png("tfls/simulations_1_test_boxplot_p1_20pct.png", 
-    width = 480, height = 720)
+    width = 480, height = 480*2)
 print(p)
 dev.off()
 
@@ -83,22 +83,8 @@ for (pct in c(10, 20)){
       scale_y_continuous(breaks=c(0.25, 0.5, 0.75))
     
     png(paste0("tfls/simulations_2_tests_boxplot_p1_",pct,"pct_n_",k,"k.png"), 
-        width = 480, height = 720)
+        width = 480, height = 480*2)
     print(p)
     dev.off()
   }
   }
-
-
-
-p <- ggplot(data = res2[res2$p1==0.2 & res2$OR<1,],
-            aes(x=Model, y=OR)) +
-  geom_boxplot() +
-  geom_hline(aes(yintercept = true_OR), linetype="dashed") +
-  facet_grid(n + true_OR_label ~ Se_label + Sp_label) +
-  theme_bw() +
-  scale_y_continuous(breaks=c(0.25, 0.5, 0.75))
-png("tfls/simulations_1_test_boxplot_p1_20pct.png", 
-    width = 480, height = 720)
-print(p)
-dev.off()
