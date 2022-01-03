@@ -50,6 +50,43 @@ OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
 }
 "
 
+bm_1t_dif <- " model {
+
+  # likelihood
+
+  y[1, 1:2] ~ dmulti(prob[1, 1:2], N[1])
+  prob[1, 1] <- pi[1] * Se_nV + (1 - pi[1]) * (1 - Sp_nV)
+  prob[1, 2] <- pi[1] * (1 - Se_nV) + (1 - pi[1]) * Sp_nV
+  
+  y[2, 1:2] ~ dmulti(prob[2, 1:2], N[2])
+  prob[2, 1] <- pi[2] * Se_V + (1 - pi[2]) * (1 - Sp_V)
+  prob[2, 2] <- pi[2] * (1 - Se_V) + (1 - pi[2]) * Sp_V
+  
+  # prior for proportions
+  pi[1] ~ dbeta(1, 1)
+  pi[2] ~ dbeta(1, 1)
+  
+  # priors for se/sp
+  logit_Se_V ~ dnorm(logit(HPSe_V[1]), HPSe_V[2])
+  logit_Sp_V ~ dnorm(logit(HPSp_V[1]), HPSp_V[2])
+  logit_Se_nV ~ dnorm(logit(HPSe_nV[1]), HPSe_nV[2])
+  logit_Sp_nV ~ dnorm(logit(HPSp_nV[1]), HPSp_nV[2])
+  
+  Se_V <- ilogit(logit_Se_V)
+  Sp_V <- ilogit(logit_Sp_V)
+  Se_nV <- ilogit(logit_Se_nV)
+  Sp_nV <- ilogit(logit_Sp_nV)
+  
+  # Computing OR
+  OR = (pi[2] / (1 - pi[2])) / (pi[1] / (1 - pi[1]))
+
+  #data
+  #inits#
+  #monitor# Se_V, Sp_V, Se_nV, Sp_nV, pi, OR
+  }
+"
+
+
 blcm_2test_dif <- " model {
 
                 # likelihood
