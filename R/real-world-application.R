@@ -1,13 +1,18 @@
-findbetaqq2(percentile.value1 = )
+# load packages -----------------------------------------------------------
+list.of.packages <- c("tidyverse", "runjags", "rjags", "rootSolve", "parallel")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
 
-##Example 1
-##We believe that 20% of the units in an area/region have a prevalence of
-##disease/infection less than or equal to 0.30 while at the same time we are 90%
-##certain that the prevalence is less than 0.60
+library(tidyverse)
+library(runjags)
+library(rjags)
+library(rootSolve)
+library(parallel)
+testjags()
 
-# The sensitivity of was 0.68 (95\% PrI = 0.63 - 0.73), while the specificity was 
-# 0.99 (95\% PrI =  0.98 - 1.00).
-bm_1test_nondif <- " model {
+source("R/functions.R") 
+
+bm_1t <- " model {
 
 for (i in 1:m) {
 
@@ -23,10 +28,11 @@ Se~dbeta(HPSe[1], HPSe[2])
 Sp~dbeta(HPSp[1], HPSp[2])
 
 OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
+VE = (1-OR)*100
 
 #data# m, N, y, HPSe, HPSp
 #inits#
-#monitor# Se, Sp, pi, OR
+#monitor# Se, Sp, pi, OR, VE
 }
 "
 
@@ -34,41 +40,26 @@ OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
 HPSe <- findbetaqq2(percentile.value1=0.63, percentile1=0.025,
             percentile.value2=0.73, percentile2=0.975)
 HPSe
-v <- rbeta(n=1000, HPSe[1], HPSe[2])
-q <- quantile(v, probs = c(0.025, 0.5, 0.975))
-round(q, 2)
+round(qbeta(c(0.025, 0.5, 0.975), # check
+            HPSe[1], HPSe[2]), 2)
+
 HPSp <- findbetaqq2(percentile.value1=0.98, percentile1=0.025,
-                    percentile.value2=0.999, percentile2=0.975)
+                    percentile.value2=0.99999999, percentile2=0.975)
 HPSp
-v <- rbeta(n=1000, HPSp[1], HPSp[2])
-q <- quantile(v, probs = c(0.025, 0.5, 0.975))
-round(q, 2)
-
-
-bm_1test_nondif
-
-sim_ve_1t_diff()
+round(qbeta(c(0.025, 0.5, 0.975), # check
+            HPSp[1], HPSp[2]), 2)
 
 y = matrix(c(51220, 251541,
          57,3817), nrow = 2, byrow = T)
 m = 2
 N = apply(y, 1, sum)
 
-results <- autorun.jags(
-  bm_1test_nondif,
-  data = list(
-    N = N,
-    y = y,
-    HPSe = HPSe,
-    HPSp = HPSp
-  ),
-  inits = list(inits1, inits2, inits3),
-  progress.bar = 'none',
-  silent.jags = T
-)
+results <- autorun.jags(bm_1t, n.chains = 3)
 results
 
-bm_1test_perf <- " model {
+plot(results, plot.type=c("trace","histogram", "autocorr"), vars = c("OR"))
+
+bm_1t_perfect <- " model {
 
 for (i in 1:m) {
 
@@ -88,14 +79,5 @@ OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
 }
 "
 
-results <- autorun.jags(
-  bm_1test_perf,
-  data = list(
-    N = N,
-    y = y
-  ),
-  inits = list(inits1, inits2, inits3),
-  progress.bar = 'none',
-  silent.jags = T
-)
+results <- autorun.jags(bm_1t_perfect, n.chains = 3)
 results
