@@ -12,6 +12,91 @@ testjags()
 
 source("R/functions.R") 
 
+
+# lecuyer initial values for parallelized JAGS code -----------------------
+
+load.module("lecuyer")
+inits1 <- list(.RNG.name = "lecuyer::RngStream", .RNG.seed = 2020)
+inits2 <- list(.RNG.name = "lecuyer::RngStream", .RNG.seed = 2021)
+inits3 <- list(.RNG.name = "lecuyer::RngStream", .RNG.seed = 2022)
+
+
+
+# Predictive prior check --------------------------------------------------
+
+
+HPSe <- findbetaqq2(
+  percentile.value1 = 0.63,
+  percentile1 = 0.025,
+  percentile.value2 = 0.73,
+  percentile2 = 0.975
+  )
+HPSe
+round(qbeta(c(0.025, 0.5, 0.975), # check
+            HPSe[1], HPSe[2]), 2)
+
+HPSp <-
+  findbeta2(
+    themedian = 0.99,
+    percentile = 0.975,
+    lower.v = FALSE,
+    percentile.value = 0.98
+  )
+
+HPSp
+
+round(qbeta(c(0.025, 0.5, 0.975), # check
+            HPSp[1], HPSp[2]), 3)
+
+
+bm_1t_prior_check <- " model {
+
+# priors for prevalence parameters
+pi[1] ~ dbeta(1, 1)
+pi[2] ~ dbeta(1, 1)
+
+Se~dbeta(HPSe[1], HPSe[2])
+Sp~dbeta(HPSp[1], HPSp[2])
+
+# logitSp~dnorm(HPSp[1], HPSp[2])
+# Sp <- ilogit(logitSp)
+
+OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
+VE = (1-OR)*100
+
+#data# HPSe, HPSp
+#inits#
+#monitor# Se, Sp, pi, OR, VE
+}
+"
+
+
+res_prior_check <- autorun.jags(
+  bm_1t_prior_check,
+  n.chains = 3,
+  inits = list(inits1, inits2, inits3),
+  thin.sample = T,
+  method = "rjparallel"
+  )
+res_prior_check
+
+plot(
+  res_prior_check,
+  plot.type = c("h", "t", "au"),
+  vars = c("OR", "Sp", "Se", "pi"),
+  layout = c(5, 3)
+  )
+
+
+# BM incorporating imperfect Se/Sp ----------------------------------------
+
+# data
+y <- matrix(c(51220, 251541,
+              57,3817), nrow = 2, byrow = T)
+m <- 2
+N <- apply(y, 1, sum)
+
+
 bm_1t <- " model {
 
 for (i in 1:m) {
@@ -27,6 +112,9 @@ pi[i] ~ dbeta(1,1)
 Se~dbeta(HPSe[1], HPSe[2])
 Sp~dbeta(HPSp[1], HPSp[2])
 
+# logitSp~dnorm(HPSp[1], HPSp[2])
+# Sp <- ilogit(logitSp)
+
 OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
 VE = (1-OR)*100
 
@@ -36,28 +124,25 @@ VE = (1-OR)*100
 }
 "
 
+res_bm <- autorun.jags(
+  bm_1t,
+  n.chains = 3,
+  inits = list(inits1, inits2, inits3),
+  thin.sample = T,
+  method = "rjparallel"
+)
 
-HPSe <- findbetaqq2(percentile.value1=0.63, percentile1=0.025,
-            percentile.value2=0.73, percentile2=0.975)
-HPSe
-round(qbeta(c(0.025, 0.5, 0.975), # check
-            HPSe[1], HPSe[2]), 2)
+res_bm
 
-HPSp <- findbetaqq2(percentile.value1=0.98, percentile1=0.025,
-                    percentile.value2=0.99999999, percentile2=0.975)
-HPSp
-round(qbeta(c(0.025, 0.5, 0.975), # check
-            HPSp[1], HPSp[2]), 2)
+plot(
+  res_bm,
+  plot.type = c("h","t", "au"),
+  vars = c("OR", "VE", "Sp", "Se"),
+  layout = c(4, 3)
+  )
 
-y = matrix(c(51220, 251541,
-         57,3817), nrow = 2, byrow = T)
-m = 2
-N = apply(y, 1, sum)
 
-results <- autorun.jags(bm_1t, n.chains = 3)
-results
-
-plot(results, plot.type=c("trace","histogram", "autocorr"), vars = c("OR"))
+# BM assuming perfect test ------------------------------------------------
 
 bm_1t_perfect <- " model {
 
@@ -72,12 +157,27 @@ pi[i] ~ dbeta(1,1)
 }
 
 OR = (pi[2]/(1-pi[2])) / (pi[1]/(1-pi[1]))
+VE = (1-OR)*100
 
 #data# m, N, y
 #inits#
-#monitor# pi, OR
+#monitor# pi, OR, VE
 }
 "
 
-results <- autorun.jags(bm_1t_perfect, n.chains = 3)
-results
+res_bm_perfect <- autorun.jags(
+  bm_1t_perfect,
+  n.chains = 3,
+  inits = list(inits1, inits2, inits3),
+  thin.sample = T,
+  method = "rjparallel"
+)
+
+res_bm_perfect
+
+plot(
+  res_bm_perfect,
+  plot.type = c("h","t", "au"),
+  vars = c("OR", "VE"),
+  layout = c(2, 3)
+)
