@@ -7,18 +7,25 @@ inits3 <- list(.RNG.name = "lecuyer::RngStream", .RNG.seed = 2022)
 initial_seed <- as.integer(as.Date("2022-01-01"))
 seeds <- initial_seed + 1:n_sim
 
-parms <- expand.grid(
+parms_ <- expand.grid(
   sim = 1:n_sim,
   n = c(10000),
   p1 = c(0.25),
-  Sp_V = c(0.99), 
-  Sp_nV = c(0.99),
+  Sp_V = c(0.99, 0.99999), 
+  Sp_nV = c(0.99, 0.99999),
   Se_V = c(0.925, 0.975),
   Se_nV = c(0.925, 0.975),
-  logit_se_Sp = c(0.1),
+  logit_se_Sp = c(0.1, 0.00001),
   logit_se_Se = c(0.2),
   true_OR = c(0.1, 0.2)
 )
+
+parms <- parms_ %>%
+  filter(
+    !Sp_V!=Sp_nV,
+    !(Sp_V==0.99 & logit_se_Sp==0.00001),
+    !(Sp_V==0.99999 & logit_se_Sp==0.1)
+    )
 
 parms$seed <- initial_seed + parms$sim
 
@@ -66,8 +73,8 @@ d0 <- mclapply(split(parms, f), function(x) {
   return(data.frame(cbind(
     parameter = row.names(results$summaries),
     round(results$summaries, 3), # results from JAGS
-    raw_OR = d$`estimated OR`, # raw estimate assuming perfect test
-    x # parameters of simulation scenario
+    raw_OR = d$`estimated OR`,   # raw estimate assuming perfect test
+    x                           # parameters of simulation scenario
   )))
 })
 
