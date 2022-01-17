@@ -5,7 +5,7 @@ res <- read.csv("tfls/simulations_1t.csv")
 res1 <- res %>%
   filter(parameter == "OR") %>%
   mutate(
-    diff_misc = Sp_V - Sp_nV,
+    diff_misc = Se_V - Se_nV,
     bias_bm = round(Median / true_OR, 2),
     bias_raw = round(raw_OR / true_OR, 2),
     BM = Median,
@@ -17,22 +17,43 @@ write.csv(res1, "tfls/simulations_1t_summary.csv", row.names = F)
 
 # plots
 res2 <- res1 %>%
-  pivot_longer(BM:Crude, names_to = "Model", values_to = "OR") %>%
+  pivot_longer(bias_bm:bias_raw, names_to = "Model", values_to = "Bias") %>%
   mutate(
+    Model = if_else(Model=="bias_raw", "Crude", "BM"),
     Scenario = paste(
-      paste0("Sp V+=", sprintf("%0.2f", Sp_V),"\n"),
-      paste0("Sp V-=", sprintf("%0.2f", Sp_nV),"\n")
+      paste0("Sp=", sprintf("%0.3f", Sp_V),"\n"),
+      paste0("Se V+=", sprintf("%0.3f", Se_V),"\n"),
+      paste0("Se V-=", sprintf("%0.3f", Se_nV))
     ),
     Misclassification = paste("Differential \n misclassification \n", ifelse(diff_misc==0, "No", "Yes")),
     true_OR_label = paste0("OR=", true_OR),
     n = paste0("n=", sprintf("%0.0f", n))
   )
 
-p <- ggplot(data = res2[res2$OR < 1, ],
-            aes(x = Model, y = OR)) +
+p1 <- ggplot(data = res2[res2$diff_misc==0,],
+            aes(x = Model, y = Bias, fill=Model)) +
   geom_boxplot() +
-  geom_hline(aes(yintercept = true_OR), linetype = "dashed") +
-  facet_grid(n + true_OR_label ~ Misclassification+ Scenario) +
+  geom_hline(aes(yintercept = 1), linetype = "dashed") +
+  facet_grid(true_OR_label ~ Scenario) +
   theme_bw() +
-  scale_y_continuous(breaks = c(0.25, 0.5, 0.75, 1))
-p
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.title = element_blank()) +
+  labs(x="") +
+  scale_y_continuous(breaks = seq(1,10,0.25))
+p1
+ggsave(filename = "tfls/t1_bias_nd.eps", plot = p1, width = 6, height = 4)
+
+p2 <- ggplot(data = res2[res2$diff_misc!=0,],
+             aes(x = Model, y = Bias, fill=Model)) +
+  geom_boxplot() +
+  geom_hline(aes(yintercept = 1), linetype = "dashed") +
+  facet_grid(true_OR_label ~ Scenario) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.title = element_blank()) +
+  labs(x="") +
+  scale_y_continuous(breaks = seq(1,10,0.25))
+p2
+ggsave(filename = "tfls/t1_bias_d.eps", plot = p2, width = 6, height = 4)
